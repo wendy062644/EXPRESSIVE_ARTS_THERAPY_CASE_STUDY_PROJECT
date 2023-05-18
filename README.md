@@ -1,1 +1,3 @@
-# EXPRESSIVE_ARTS_THERAPY_CASE_STUDY_PROJECT
+# 表達性藝術治療個案討論-期末專題
+## 簡單的規則
+訓練反應力及手眼協調能力
