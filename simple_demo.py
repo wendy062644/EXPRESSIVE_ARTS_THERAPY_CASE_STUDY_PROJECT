@@ -2,6 +2,7 @@ import pygame
 import sys
 import random
 import time
+import pandas as pd
 
 # 初始化 Pygame
 pygame.init()
@@ -9,6 +10,9 @@ pygame.init()
 # 设置窗口大小
 window_size = (400, 800)
 screen = pygame.display.set_mode(window_size)
+
+# 读取 data.csv 文件
+data = pd.read_csv('data.csv')
 
 # 设置颜色
 WHITE = (255, 255, 255)
@@ -39,15 +43,18 @@ block_x_positions = [0, 100, 200, 300]  # 方块的 X 坐标位置
 blocks = []  # 存储随机方块的列表
 
 # 设置时间间隔和帧率
-fall_interval = 1.0  # 方块下落间隔时间（秒）
+
 bullet_speed = 10  # 子弹的垂直速度（像素/帧）
 
 # 设置字体
+small_font = pygame.font.Font(None, 34)
 font = pygame.font.Font(None, 38)
 large_font = pygame.font.Font(None, 56)
 
-# 设置分数变量
+# 设置分数、生命、速度
 score = 0
+lives = 2
+fall_interval = 1.0
 
 # 游戏状态
 game_state = "start"  # 开始画面
@@ -55,6 +62,7 @@ game_state = "start"  # 开始画面
 # 倒计时
 countdown = 3
 countdown_font = pygame.font.Font(None, 100)
+elapsed_time = 0  # 游戏时间
 
 # 游戏主循环
 clock = pygame.time.Clock()
@@ -65,16 +73,36 @@ while True:
     # 检查事件
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
+            # 将游戏结果记录到 data.csv 文件
+            game_result = {
+                "Score": score,
+                "Difficulty": difficulty,
+                "Elapsed Time": elapsed_time
+            }
+            # 添加游戏结果到DataFrame
+            game_result = pd.DataFrame({'Score': [score], 'Difficulty': [difficulty],
+                                        'Elapsed Time': [elapsed_time]})
+            data = pd.concat([data, game_result], ignore_index=True)
+
+            # 将结果保存回data.csv文件
+            data.to_csv('data.csv', index=False)
+
             pygame.quit()
             sys.exit()
         elif event.type == pygame.KEYDOWN:
             if game_state == "start":
                 if event.key == pygame.K_1:
                     difficulty = "Easy"
+                    fall_interval = 1.0  # 方块下落间隔时间（秒）
+                    lives = 2
                 elif event.key == pygame.K_2:
                     difficulty = "Normal"
+                    fall_interval = 0.5  # 方块下落间隔时间（秒）
+                    lives = 2
                 elif event.key == pygame.K_3:
                     difficulty = "Hard"
+                    fall_interval = 0.5  # 方块下落间隔时间（秒）
+                    lives = 1
                 elif event.key == pygame.K_SPACE:
                     game_state = "countdown"
                     countdown = 3
@@ -116,13 +144,21 @@ while True:
 
         # 移动随机方块
         for block in blocks:
-            block.y += 3  # 方块向下移动
+            if difficulty == "Easy":
+                block.y += 2  # 方块向下移动
+            elif difficulty == "Normal":
+                block.y += 3  # 方块向下移动
+            else:
+                block.y += 4  # 方块向下移动
             if block.y > window_size[1]:  # 如果方块超出窗口底部，从列表中移除
                 blocks.remove(block)
-            if bullet.colliderect(block):  # 子弹和方块发生碰撞
+                lives -= 1
+                if lives == 0:
+                    game_state = "game_over"
+            if bullet.colliderect(block) and bullet_state == "fire":  # 子弹和方块发生碰撞
                 blocks.remove(block)  # 移除方块
                 bullet_state = "ready"  # 重置子弹状态
-                score += 100  # 增加分数
+                score += 1  # 增加分数
 
     # 填充背景色
     screen.fill(WHITE)
@@ -153,6 +189,7 @@ while True:
 
         if countdown < 0:
             game_state = "playing"
+            start_time = time.time()  # 记录时间
             last_fall_time = time.time()
 
     elif game_state == "playing":
@@ -178,9 +215,30 @@ while True:
         pygame.draw.line(screen, BLACK, (300, 50), (300, window_size[1]), 2)
 
         # 绘制分数
-        score_text = font.render("Score: " + str(score), True, BLACK)
-        score_rect_center = score_text.get_rect(center=(window_size[0] // 2, 25))
+        score_text = small_font.render("Score: " + str(score), True, BLACK)
+        score_rect_center = score_text.get_rect(center=(window_size[0] // 2 - 140, 25))
         screen.blit(score_text, score_rect_center)
+
+        # 绘制生命
+        lives_text = small_font.render("Lives: " + str(lives), True, BLACK)
+        lives_rect = lives_text.get_rect(center=(window_size[0] // 2 + 140, 25))
+        screen.blit(lives_text, lives_rect)
+
+        # 绘制经过的秒数
+        elapsed_time = round(time.time() - start_time, 1)
+        elapsed_time_text = small_font.render("Time: " + str(elapsed_time), True, BLACK)
+        elapsed_time_rect = elapsed_time_text.get_rect(center=(window_size[0] // 2, 25))
+        screen.blit(elapsed_time_text, elapsed_time_rect)
+
+    elif game_state == "game_over":
+        # 绘制游戏结束画面
+        game_over_text = large_font.render("Game Over", True, BLACK)
+        game_over_rect_center = game_over_text.get_rect(center=(window_size[0] // 2, window_size[1] // 2 - 80))
+        screen.blit(game_over_text, game_over_rect_center)
+
+        final_score_text = font.render("Final Score: " + str(score), True, BLACK)
+        final_score_rect_center = final_score_text.get_rect(center=(window_size[0] // 2, window_size[1] // 2))
+        screen.blit(final_score_text, final_score_rect_center)
 
     # 更新屏幕
     pygame.display.update()
