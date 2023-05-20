@@ -43,18 +43,19 @@ block_x_positions = [0, 100, 200, 300]  # 方块的 X 坐标位置
 blocks = []  # 存储随机方块的列表
 
 # 设置时间间隔和帧率
-
 bullet_speed = 10  # 子弹的垂直速度（像素/帧）
+fall_interval = 1.0 # 生成方塊的速度(塊/秒)
+block_speed = 2.0 #方塊移動速度(像素/秒)
+
 
 # 设置字体
 small_font = pygame.font.Font(None, 34)
 font = pygame.font.Font(None, 38)
 large_font = pygame.font.Font(None, 56)
 
-# 设置分数、生命、速度
+# 设置分数、生命
 score = 0
 lives = 2
-fall_interval = 1.0
 
 # 游戏状态
 game_state = "start"  # 开始画面
@@ -94,15 +95,21 @@ while True:
                 if event.key == pygame.K_1:
                     difficulty = "Easy"
                     fall_interval = 1.0  # 方块下落间隔时间（秒）
+                    block_speed = 2.0
                     lives = 2
+                    bullet_speed = 10
                 elif event.key == pygame.K_2:
                     difficulty = "Normal"
                     fall_interval = 0.5  # 方块下落间隔时间（秒）
+                    block_speed = 2.5
                     lives = 2
+                    bullet_speed = 10
                 elif event.key == pygame.K_3:
                     difficulty = "Hard"
                     fall_interval = 0.5  # 方块下落间隔时间（秒）
+                    block_speed = 3.0
                     lives = 1
+                    bullet_speed = 12
                 elif event.key == pygame.K_SPACE:
                     game_state = "countdown"
                     countdown = 3
@@ -145,11 +152,11 @@ while True:
         # 移动随机方块
         for block in blocks:
             if difficulty == "Easy":
-                block.y += 2  # 方块向下移动
+                block.y += block_speed  # 方块向下移动
             elif difficulty == "Normal":
-                block.y += 3  # 方块向下移动
+                block.y += block_speed  # 方块向下移动
             else:
-                block.y += 4  # 方块向下移动
+                block.y += block_speed  # 方块向下移动
             if block.y > window_size[1]:  # 如果方块超出窗口底部，从列表中移除
                 blocks.remove(block)
                 lives -= 1
@@ -226,7 +233,13 @@ while True:
 
         # 绘制经过的秒数
         elapsed_time = round(time.time() - start_time, 1)
-        elapsed_time_text = small_font.render("Time: " + str(elapsed_time), True, BLACK)
+        if elapsed_time%10 == 0: # 每10秒增加方塊生成、移動速度，增加子彈速度
+            fall_interval = fall_interval - (fall_interval*0.05)
+            block_speed = block_speed + 0.1
+            bullet_speed = bullet_speed + 0.25
+
+
+        elapsed_time_text = small_font.render("Time: " + str(elapsed_time) + "s", True, BLACK)
         elapsed_time_rect = elapsed_time_text.get_rect(center=(window_size[0] // 2, 25))
         screen.blit(elapsed_time_text, elapsed_time_rect)
 
