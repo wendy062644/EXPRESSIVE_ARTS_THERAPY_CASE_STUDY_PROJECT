@@ -3,6 +3,7 @@ import sys
 import random
 import time
 import pandas as pd
+import math
 
 # 初始化 Pygame
 pygame.init()
@@ -13,6 +14,8 @@ screen = pygame.display.set_mode(window_size)
 
 # 读取 data.csv 文件
 data = pd.read_csv('data.csv')
+
+Highest_score = data['Score'].max()
 
 # 设置颜色
 WHITE = (255, 255, 255)
@@ -46,7 +49,9 @@ blocks = []  # 存储随机方块的列表
 bullet_speed = 10  # 子弹的垂直速度（像素/帧）
 fall_interval = 1.0 # 生成方塊的速度(塊/秒)
 block_speed = 2.0 #方塊移動速度(像素/秒)
-
+fall_interval_speed = 1.0
+block_speed_control = 2.0  #方塊掉落速度
+bullet_speed_control = 10 #子彈速度
 
 # 设置字体
 small_font = pygame.font.Font(None, 34)
@@ -137,13 +142,13 @@ while True:
     if game_state == "playing":
         # 移动子弹
         if bullet_state == "fire":
-            bullet.y -= bullet_speed  # 子弹向上移动
+            bullet.y -= bullet_speed_control  # 子弹向上移动
             if bullet.y < 0:  # 如果子弹超出窗口上方，重置为准备状态
                 bullet_state = "ready"
 
         # 添加随机方块
         current_time = time.time()
-        if current_time - last_fall_time > fall_interval:
+        if current_time - last_fall_time > fall_interval_speed:
             x_pos = random.choice(block_x_positions)
             block = pygame.Rect(x_pos, 40, block_width, block_height)  # 方块初始位置在最顶部上方40个像素的位置
             blocks.append(block)
@@ -152,11 +157,11 @@ while True:
         # 移动随机方块
         for block in blocks:
             if difficulty == "Easy":
-                block.y += block_speed  # 方块向下移动
+                block.y += block_speed_control  # 方块向下移动
             elif difficulty == "Normal":
-                block.y += block_speed  # 方块向下移动
+                block.y += block_speed_control  # 方块向下移动
             else:
-                block.y += block_speed  # 方块向下移动
+                block.y += block_speed_control  # 方块向下移动
             if block.y > window_size[1]:  # 如果方块超出窗口底部，从列表中移除
                 blocks.remove(block)
                 lives -= 1
@@ -231,12 +236,11 @@ while True:
         lives_rect = lives_text.get_rect(center=(window_size[0] // 2 + 140, 25))
         screen.blit(lives_text, lives_rect)
 
-        # 绘制经过的秒数
-        elapsed_time = round(time.time() - start_time, 1)
-        if elapsed_time%10 == 0: # 每10秒增加方塊生成、移動速度，增加子彈速度
-            fall_interval = fall_interval - (fall_interval*0.05)
-            block_speed = block_speed + 0.1
-            bullet_speed = bullet_speed + 0.25
+        # 控制速度
+        elapsed_time = round(time.time() - start_time, 1) #經過的秒數
+        fall_interval_speed = fall_interval - math.sqrt(elapsed_time)*0.02 #生成方塊/秒
+        block_speed_control = block_speed + math.sqrt(elapsed_time)*0.1  #方塊掉落速度
+        bullet_speed_control = bullet_speed + math.sqrt(elapsed_time)*0.2 #子彈速度
 
 
         elapsed_time_text = small_font.render("Time: " + str(elapsed_time) + "s", True, BLACK)
@@ -252,6 +256,10 @@ while True:
         final_score_text = font.render("Final Score: " + str(score), True, BLACK)
         final_score_rect_center = final_score_text.get_rect(center=(window_size[0] // 2, window_size[1] // 2))
         screen.blit(final_score_text, final_score_rect_center)
+
+        highest_score_text = font.render("Highest Score: " + str(Highest_score), True, BLACK)
+        highest_score_text_center = highest_score_text.get_rect(center=(window_size[0] // 2, window_size[1] // 2 + 40))
+        screen.blit(highest_score_text, highest_score_text_center)
 
     # 更新屏幕
     pygame.display.update()
