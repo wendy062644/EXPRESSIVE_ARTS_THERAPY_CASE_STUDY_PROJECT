@@ -9,6 +9,7 @@ df = df.reset_index(drop=True)
 fig, ax1 = plt.subplots()
 ax2 = ax1.twinx()
 
+plt.title(difficulty)
 ax1.bar(df.index.values, df['Score'], color = 'tab:blue') #柱狀圖
 ax1.tick_params(axis='y', labelcolor = 'tab:blue') #定義左側數字顏色
 ax1.set_ylabel('Score', c = 'tab:blue') #左側Y軸名稱

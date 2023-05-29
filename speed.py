@@ -1,7 +1,9 @@
 import math
-import pandas as pd
 import matplotlib.pyplot as plt
+from matplotlib.font_manager import FontProperties
 import numpy as np
+
+plt.rcParams['font.sans-serif'] = ['Taipei Sans TC Beta']
 
 difficulty = "Easy"
 fall_interval = 1.0  # 方块下落间隔时间（秒）
